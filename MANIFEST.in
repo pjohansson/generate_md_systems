@@ -1,0 +1,8 @@
+include pyproject.toml
+include setup.cfg
+
+# Include metadata
+include README.md
+include LICENSE.md LICENSE-PARITY.md
+
+# Include the data files
