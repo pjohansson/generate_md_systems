@@ -14,6 +14,7 @@ from tempfile import TemporaryDirectory
 # sur_area_density = (344 / 2) / (40. * 20.)
 sur_residue_length = 2
 
+
 def verify_conf_is_monotype(conf):
     """Asserts that all residues in the configuration are identical.
     
@@ -25,6 +26,7 @@ def verify_conf_is_monotype(conf):
 
     for atom in conf.atoms[1:]:
         assert atom.residue == head_residue
+
 
 def read_conf(path, default_path, default_dir='include'):
     """Read a configuration either from a given path or the database.
@@ -62,6 +64,7 @@ def read_conf(path, default_path, default_dir='include'):
 
     return conf
 
+
 def calc_volume(conf):
     """Calculate the box volume."""
 
@@ -69,6 +72,7 @@ def calc_volume(conf):
     volume = dx * dy * dz
 
     return volume
+
 
 def calc_density(conf, residue_length):
     """Calculate the molecule number density inside the configuration."""
@@ -81,7 +85,8 @@ def calc_density(conf, residue_length):
 
     return num_mols / calc_volume(conf)
 
-def expand_conf_to_minimum_size(conf, to_size_x, to_size_z):
+
+def stack_conf_to_minimum_size(conf, to_size_x, to_size_y, to_size_z):
     """Stack multiples of the configuration to a minimum final size.
     
     Note that this only stacks the boxes, it does not cut the 
@@ -90,11 +95,10 @@ def expand_conf_to_minimum_size(conf, to_size_x, to_size_z):
     
     """
 
-
-    def move_atom(atom, ix, iz, dx, dz):
+    def move_atom(atom, ix, iy, iz, dx, dy, dz):
         x = atom.position.x + ix * dx
+        y = atom.position.y + iy * dy
         z = atom.position.z + iz * dz
-        y = atom.position.y
 
         return Atom(
                 name=atom.name,
@@ -106,16 +110,20 @@ def expand_conf_to_minimum_size(conf, to_size_x, to_size_z):
     size_x, size_y, size_z = conf.box_size
 
     nx = int(np.ceil(to_size_x / size_x))
+    ny = int(np.ceil(to_size_y / size_y))
     nz = int(np.ceil(to_size_z / size_z))
 
     atoms = conf.atoms.copy()
 
     for ix in range(nx):
-        for iz in range(nz):
-            if ix > 0 or iz > 0:
-                atoms += [move_atom(atom, ix, iz, size_x, size_z) for atom in conf.atoms]
+        for iy in range(ny):
+            for iz in range(nz):
+                if ix > 0 or iy > 0 or iz > 0:
+                    atoms += [
+                        move_atom(atom, ix, iy, iz, size_x, size_y, size_z) 
+                        for atom in conf.atoms]
 
-    box_size = size_x * nx, size_y, size_z * nz
+    box_size = size_x * nx, size_y * ny, size_z * nz
 
     return Gromos87(
             title=conf.title,
@@ -123,15 +131,23 @@ def expand_conf_to_minimum_size(conf, to_size_x, to_size_z):
             atoms=atoms,
             )
 
-def cut_conf_to_size(conf, xmax, zmax, residue_length):
-    """Cut a configuration to the set size."""
 
-    def check_atom(atom, xmax, zmax):
-        return atom.position.x <= xmax and atom.position.z <= zmax
+def cut_conf_to_size(conf, xmax, ymax, zmax, residue_length):
+    """Cut a configuration to the set size.
+    
+    Molecules are kept if any of their atoms lie inside the box.
+
+    """
+
+    def check_atom(atom, xmax, ymax, zmax):
+        return (atom.position.x <= xmax 
+                and atom.position.y <= ymax
+                and atom.position.z <= zmax)
 
     # Keep molecule if any atom is inside, else discard
-    def check_molecule(atoms, xmax, zmax):
-        return np.any([check_atom(atom, xmax, zmax) for atom in atoms])
+    def check_molecule(atoms, xmax, ymax, zmax):
+        return np.any(
+            [check_atom(atom, xmax, ymax, zmax) for atom in atoms])
 
     num_mols = len(conf.atoms) // residue_length
     kept_atoms = []
@@ -142,17 +158,17 @@ def cut_conf_to_size(conf, xmax, zmax, residue_length):
 
         atoms = conf.atoms[i0:i1]
 
-        if check_molecule(atoms, xmax, zmax):
+        if check_molecule(atoms, xmax, ymax, zmax):
             kept_atoms += atoms
 
-    _, size_y, _ = conf.box_size
-    box_size = xmax, size_y, zmax
+    box_size = xmax, ymax, zmax
 
     return Gromos87(
             title=conf.title,
             box_size=box_size,
             atoms=kept_atoms
             )
+
 
 def correct_conf_density(conf, residue_length):
     """Correct the configuration to the set molecule density."""
@@ -168,14 +184,16 @@ def correct_conf_density(conf, residue_length):
 
     return conf
 
-def create_conf_with_size(conf, size_x, size_z, residue_length):
+
+def create_conf_with_size(conf, size_x, size_y, size_z, residue_length):
     """Expand or cut the given configuration to the set size."""
 
-    conf_expanded = expand_conf_to_minimum_size(conf, size_x, size_z)
-    conf_resized = cut_conf_to_size(conf_expanded, size_x, size_z, residue_length)
+    conf_stacked = stack_conf_to_minimum_size(conf, size_x, size_y, size_z)
+    conf_resized = cut_conf_to_size(conf_stacked, size_x, size_y, size_z, residue_length)
     conf_final = correct_conf_density(conf_resized, residue_length)
 
     return conf_final
+
 
 def create_stack(conf_one, conf_two, separation):
     """Translate and stack the two phases with the given separation."""
@@ -211,6 +229,7 @@ def create_stack(conf_one, conf_two, separation):
             box_size=(size_x, size_y, size_z_total),
             atoms=atoms,
             )
+
 
 def get_surfactant_conf(conf_one, conf_two, 
                         separation, conf_stacked, sur_area_density):
@@ -252,6 +271,7 @@ def get_surfactant_conf(conf_one, conf_two,
 
         return read_gromos87(path)
 
+
 def get_final_conf(conf_stacked_phases, conf_surfactants):
     """Add the surfactant atoms to the fluid stack."""
 
@@ -265,6 +285,7 @@ def get_final_conf(conf_stacked_phases, conf_surfactants):
             box_size=conf_stacked_phases.box_size,
             atoms=atoms,
             )
+
 
 def get_posres(conf, mol_len=1., invert_first=True):
     """Generate position restraint coordinates. 
@@ -352,16 +373,15 @@ def print_topol(fp,
 
     return 
 
+
 if __name__ == '__main__':
     parser = ArgumentParser('create_system',
             description='Create a two-phase fluid system with surfactants.')
 
-    parser.add_argument('size_x',
-            type=float, metavar='X',
-            help='size of created box along x')
-    parser.add_argument('size_z',
-            type=float, metavar='Z',
-            help='size of created box along z')
+    parser.add_argument('box_size', 
+            nargs=3, metavar='SIZE', type=float, 
+            help="Box size for created system along x, y and z.")
+
     parser.add_argument('-d', '--surfactant-density',
             default=0.215, type=float, metavar='VALUE',
             help='area number density of surfactants in each interface (default: %(default)s)')
@@ -373,10 +393,10 @@ if __name__ == '__main__':
             description='Options for writing output files.')
     parser_output.add_argument('-o', '--output', 
             type=str, default='conf_two_phase.gro', metavar='PATH', 
-            help='write configuration to file at this path')
+            help='write configuration to file at this path (default: %(default)s)')
     parser_output.add_argument('-r', '--posres-output', 
             type=str, default=None, metavar='PATH', 
-            help='write position restraints to file at this path')
+            help='optionally write position restraints to file at this path')
 
     parser_input = parser.add_argument_group('input configuration options')
     parser_input.add_argument('--phase-one', 
@@ -390,8 +410,12 @@ if __name__ == '__main__':
             help='number of atoms per fluid molecule (default: %(default)s)')
 
     parser_topol = parser.add_argument_group('topology options',
-            description='Options which affect the written output '
-                        'in the topology format (Gromacs .top files). This output lists the created molecule groups with their name and number of molecules.')
+            description="""
+                Options which affect the written output in the topology 
+                format (Gromacs .top files). This output lists the created 
+                molecule groups with their name and number of molecules.
+                
+                """)
     parser_topol.add_argument('--phase-one-topolname', 
             type=str, default='lj-chain-2',
             metavar='NAME', help='name for phase one molecules (default: %(default)s)')
@@ -402,15 +426,17 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    phase_height = args.size_z / 2.
-
     conf_one = read_conf(args.phase_one, 'LJ1.gro')
     conf_two = read_conf(args.phase_two, 'LJ2.gro')
 
+    size_x, size_y, size_z = args.box_size
+
+    phase_height = size_z / 2.
+
     conf_one_final = create_conf_with_size(
-            conf_one, args.size_x, phase_height, args.residue_length)
+            conf_one, size_x, size_y, phase_height, args.residue_length)
     conf_two_final = create_conf_with_size(
-            conf_two, args.size_x, phase_height, args.residue_length)
+            conf_two, size_x, size_y, phase_height, args.residue_length)
 
     conf_stacked_phases = create_stack(conf_one_final, conf_two_final, args.separation)
 
