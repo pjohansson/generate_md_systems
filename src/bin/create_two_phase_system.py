@@ -380,7 +380,7 @@ if __name__ == '__main__':
 
     parser.add_argument('box_size', 
             nargs=3, metavar='SIZE', type=float, 
-            help="Box size for created system along x, y and z.")
+            help="Size of each fluid phase along x, y and z.")
 
     parser.add_argument('-d', '--surfactant-density',
             default=0.215, type=float, metavar='VALUE',
@@ -431,12 +431,10 @@ if __name__ == '__main__':
 
     size_x, size_y, size_z = args.box_size
 
-    phase_height = size_z / 2.
-
     conf_one_final = create_conf_with_size(
-            conf_one, size_x, size_y, phase_height, args.residue_length)
+            conf_one, size_x, size_y, size_z, args.residue_length)
     conf_two_final = create_conf_with_size(
-            conf_two, size_x, size_y, phase_height, args.residue_length)
+            conf_two, size_x, size_y, size_z, args.residue_length)
 
     conf_stacked_phases = create_stack(conf_one_final, conf_two_final, args.separation)
 
