@@ -195,54 +195,173 @@ def create_conf_with_size(conf, size_x, size_y, size_z, residue_length):
     return conf_final
 
 
-def create_stack(conf_one, conf_two, separation):
+def translate_atoms(atoms, shift, axis):
+    """Translate a set of `Atom`s by `shift` along `axis`."""
+
+    def move_atom(atom, shift, axis):
+        x, y, z = atom.position
+
+        if axis == 'x':
+            x += shift
+        elif axis == 'y':
+            y += shift
+        else:
+            z += shift
+
+        position = Vec3(x, y, z)
+
+        return Atom(
+                name=atom.name,
+                residue=atom.residue,
+                position=position,
+                velocity=atom.velocity
+                )
+
+    return [move_atom(atom, shift, axis) for atom in atoms]
+
+
+def create_stack(conf_one, conf_two, separation, axis):
     """Translate and stack the two phases with the given separation."""
 
-    def translate_atoms(atoms, dz):
-        def move_atom(atom, dz):
-            position = Vec3(x=atom.position.x, y=atom.position.y, z=atom.position.z + dz)
+    if axis == 'x':
+        d = 0
+    elif axis == 'y':
+        d = 1
+    else:
+        d = 2
+    
+    size1 = conf_one.box_size[d]
+    size2 = conf_two.box_size[d]
 
-            return Atom(
-                    name=atom.name,
-                    residue=atom.residue,
-                    position=position,
-                    velocity=atom.velocity
-                    )
+    shift1 = size2 / 2. + separation
+    shift2 = -size2 / 2.
 
-        return [move_atom(atom, dz) for atom in atoms]
-
-    size_x, size_y, size_z_one = conf_one.box_size
-    _, _, size_z_two = conf_two.box_size
-
-    dz_one = size_z_two / 2. + separation
-    dz_two = -size_z_two / 2.
-
-    size_z_total = size_z_one + size_z_two + 2. * separation
-
-    conf_one_atoms = translate_atoms(conf_one.atoms, dz_one)
-    conf_two_atoms = translate_atoms(conf_two.atoms, dz_two)
+    conf_one_atoms = translate_atoms(conf_one.atoms, shift1, axis)
+    conf_two_atoms = translate_atoms(conf_two.atoms, shift2, axis)
 
     atoms = conf_one_atoms + conf_two_atoms
 
+    box_x, box_y, box_z = conf_one.box_size
+    new_size = size1 + size2 + 2. * separation
+
+    if axis == 'x':
+        box_x = new_size
+    elif axis == 'y':
+        box_y = new_size
+    else:
+        box_z = new_size
+
     return Gromos87(
             title=conf_one.title,
-            box_size=(size_x, size_y, size_z_total),
+            box_size=(box_x, box_y, box_z),
             atoms=atoms,
             )
 
 
 def get_surfactant_conf(conf_one, conf_two, 
-                        separation, conf_stacked, sur_area_density):
+                        separation, conf_stacked, 
+                        sur_area_density, axis):
     """Generate surfactants at both interfaces."""
 
-    _, _, size_z_one = conf_one.box_size
-    _, _, size_z_two = conf_two.box_size
-    size_x, size_y, size_z_final = conf_stacked.box_size
+    def rotate_conf_to_axis(conf, axis):
+        def rotate_atoms(atoms, matrix):
+            def rotate_single_atom(atom):
+                def multiply_row(row):
+                    return row[0] * x0 + row[1] * y0 + row[2] * z0
 
-    z0 = (size_z_two + separation) / 2.
-    z1 = z0 + size_z_one + separation
+                x0, y0, z0 = atom.position
 
-    area = size_x * size_y
+                x1 = multiply_row(matrix[0])
+                y1 = multiply_row(matrix[1])
+                z1 = multiply_row(matrix[2])
+
+                position = Vec3(x1, y1, z1)
+
+                return Atom(
+                    position=position,
+                    velocity=atom.velocity,
+                    name=atom.name,
+                    residue=atom.residue,
+                )
+            
+            return [rotate_single_atom(atom) for atom in atoms]
+
+        box_x, box_y, box_z = conf.box_size
+
+        if axis == 'x':
+            # Rotate -90 deg. around the Y axis
+            matrix = [
+                [0, 0, 1],
+                [0, 1, 0],
+                [-1, 0, 0],
+            ]
+
+            atoms = rotate_atoms(conf.atoms, matrix)
+            atoms = translate_atoms(atoms, box_x, 'z')
+            box_size = box_z, box_y, box_x
+
+        elif axis == 'y':
+            # Rotate -90 deg. around the X axis
+            matrix = [
+                [1, 0, 0],
+                [0, 0, 1],
+                [0, -1, 0],
+            ]
+
+            atoms = rotate_atoms(conf.atoms, matrix)
+            atoms = translate_atoms(atoms, box_y, 'z')
+            box_size = box_z, box_x, box_y
+
+        else:
+            atoms = conf.atoms
+            box_size = conf.box_size
+
+        return Gromos87(
+            title=conf.title,
+            atoms=atoms,
+            box_size=box_size,
+        )
+
+    # `gen_surfactant` only generates interfaces normal to z. 
+    #
+    # To get around this we make a transform into our box:
+    #   `sz` here contains our box size along the target `axis`,
+    #   `sx`, `sy` the box sizes transverse to it.
+    #
+    # These will be used for the surfactant generation, after 
+    # which we rotate the box to our actual axis
+    #
+    # Note: We here first to the rotation and then translation 
+    # separately. This could be done in a single which would 
+    # likely save some cycles. But since there generally are 
+    # not that many surfactant molecules we leave it like this 
+    # for now.
+
+    box_full_x, box_full_y, box_full_z = conf_stacked.box_size
+
+    if axis == 'x': 
+        d = 0
+        sx = box_full_z
+        sy = box_full_y 
+        sz = box_full_x
+    elif axis == 'y':
+        d = 1
+        sx = box_full_x 
+        sy = box_full_z 
+        sz = box_full_y
+    else:
+        d = 2
+        sx = box_full_x 
+        sy = box_full_y
+        sz = box_full_z
+
+    sz_one = conf_one.box_size[d]
+    sz_two = conf_two.box_size[d]
+
+    z0 = (sz_two + separation) / 2.
+    z1 = z0 + sz_one + separation
+
+    area = sx * sy
     num_mols = int(sur_area_density * area)
 
     binary = 'gen_surfactant'
@@ -250,15 +369,20 @@ def get_surfactant_conf(conf_one, conf_two,
             binary,
             '{}'.format(num_mols),
             '-b',
-            '{}'.format(size_x),
-            '{}'.format(size_y),
-            '{}'.format(size_z_final),
+            '{}'.format(sx),
+            '{}'.format(sy),
+            '{}'.format(sz),
             '-z',
             '{}'.format(z0),
             '{}'.format(z1),
             '--full-gromos87',
             ]
 
+    # `gen_surfactant` can write to standard output, so we 
+    # open a temporary file to pipe into. We then read the 
+    # configuration of surfactants from that file.
+    #
+    # Very convoluted.
     with TemporaryDirectory() as tmpdir:
         path = os.path.join(tmpdir, 'sur.gro')
 
@@ -269,7 +393,9 @@ def get_surfactant_conf(conf_one, conf_two,
                 print("error: could not find required executable '{}'".format(binary))
                 exit(1)
 
-        return read_gromos87(path)
+        conf_surfactants = read_gromos87(path)
+    
+    return rotate_conf_to_axis(conf_surfactants, axis)
 
 
 def get_final_conf(conf_stacked_phases, conf_surfactants):
@@ -357,7 +483,7 @@ def print_topol(fp,
                 conf_one, conf_two, conf_sur, 
                 name_one, name_two, name_sur, 
                 residue_length):
-    """Write topology [ molecules ] directive."""
+    """Write topology `[ molecules ]` directive."""
 
     def get_num_mols(conf, num_atoms):
         return len(conf.atoms) // num_atoms
@@ -382,6 +508,10 @@ if __name__ == '__main__':
             nargs=3, metavar='SIZE', type=float, 
             help="Size of each fluid phase along x, y and z.")
 
+    parser.add_argument('-a', '--axis', 
+            choices=['x', 'y', 'z'], default='z', 
+            type=str.lower, # makes the choices case insensitive
+            help="axis along which to create separate phases")
     parser.add_argument('-d', '--surfactant-density',
             default=0.215, type=float, metavar='VALUE',
             help='area number density of surfactants in each interface (default: %(default)s)')
@@ -436,11 +566,12 @@ if __name__ == '__main__':
     conf_two_final = create_conf_with_size(
             conf_two, size_x, size_y, size_z, args.residue_length)
 
-    conf_stacked_phases = create_stack(conf_one_final, conf_two_final, args.separation)
+    conf_stacked_phases = create_stack(conf_one_final, conf_two_final, 
+            args.separation, args.axis)
 
     if args.surfactant_density > 0.:
         conf_surfactants = get_surfactant_conf(
-                conf_one_final, conf_two_final, args.separation, conf_stacked_phases, args.surfactant_density)
+                conf_one_final, conf_two_final, args.separation, conf_stacked_phases, args.surfactant_density, args.axis)
     else:
         conf_surfactants = None
 
