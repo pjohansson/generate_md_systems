@@ -72,17 +72,21 @@ def get_output_title(title,
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description="""
+            Generate two-phase fluid systems with surfactants at 
+            interfaces and substrates on top and bottom."""
+    )
 
     parser.add_argument('x', 
-            type=float,
-            help="size of each liquid phase along x")
+        type=float,
+        help="size of each liquid phase along x")
     parser.add_argument('y', 
-            type=float,
-            help="size of each liquid phase along y")
+        type=float,
+        help="size of each liquid phase along y")
     parser.add_argument('z', 
-            type=float,
-            help="size of each liquid phase along z")
+        type=float,
+        help="size of each liquid phase along z")
 
     # Disable this option: at least for now we only create 
     # shear systems directed along the x axis. Otherwise 
@@ -147,7 +151,7 @@ if __name__ == '__main__':
         ]
 
         mkphase_args = [
-            'create_two_phase_system.py',
+            'gen_two_phase_system.py',
             str(args.x), str(args.y), str(args.z),
             '--output', path_phases,
             '--surfactant-density', str(args.surfactant_density),
@@ -178,6 +182,7 @@ if __name__ == '__main__':
             '--output', args.output,
             '--box_size', '-1', '-1', str(zshifts['box_z']),
             '--title', get_output_title(args.title),
+            '--quiet',
         ]
 
         try:
