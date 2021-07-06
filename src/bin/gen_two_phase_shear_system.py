@@ -125,7 +125,9 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    nx, ny = calc_fcc_num_sites(2. * args.x, args.y, args.fcc_spacing)
+    box_x = 2. * args.x + 2. * args.separation
+
+    nx, ny = calc_fcc_num_sites(box_x, args.y, args.fcc_spacing)
     fcc_box_z = calc_fcc_box_z(args.fcc_nz, args.fcc_spacing)
 
     zshifts = calc_z_shifts(args.z, fcc_box_z, args.fcc_margin)
