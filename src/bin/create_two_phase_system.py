@@ -501,7 +501,7 @@ def print_topol(fp,
 
 
 if __name__ == '__main__':
-    parser = ArgumentParser('create_system',
+    parser = ArgumentParser(
             description='Create a two-phase fluid system with surfactants.')
 
     parser.add_argument('box_size', 
