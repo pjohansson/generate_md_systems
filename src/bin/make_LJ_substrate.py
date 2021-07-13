@@ -101,7 +101,7 @@ def print_conf(fp, points, atom_name, residue_name, box_size, title=None):
 def print_topol(fp, points, topolname):
     """Write topology `[ molecules ]` directive."""
 
-    fp.write("{} {}\n".format(len(points), topolname))
+    fp.write("{} {}\n".format(topolname, len(points)))
 
     return 
 
