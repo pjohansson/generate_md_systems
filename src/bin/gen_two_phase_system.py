@@ -546,6 +546,9 @@ if __name__ == '__main__':
                 molecule groups with their name and number of molecules.
                 
                 """)
+    parser_topol.add_argument('-t', '--topology', 
+        type=str, metavar='PATH', default=None, 
+        help="Optionally write topology `[ molecules ]` directive to this path")
     parser_topol.add_argument('--phase-one-topolname', 
             type=str, default='lj-chain-2',
             metavar='NAME', help='name for phase one molecules (default: %(default)s)')
@@ -583,7 +586,9 @@ if __name__ == '__main__':
         conf_with_posres = get_final_conf(conf_stacked_phases, conf_surfactants_posres)
         write_gromos87(args.posres_output, conf_with_posres)
 
-    print_topol(stdout, 
-                conf_one_final, conf_two_final, conf_surfactants,
-                args.phase_one_topolname, args.phase_two_topolname, 
-                args.surfactant_topolname, args.residue_length)
+    if args.topology:
+        with open(args.topology, 'w') as fp:
+            print_topol(fp, 
+                        conf_one_final, conf_two_final, conf_surfactants,
+                        args.phase_one_topolname, args.phase_two_topolname, 
+                        args.surfactant_topolname, args.residue_length)
