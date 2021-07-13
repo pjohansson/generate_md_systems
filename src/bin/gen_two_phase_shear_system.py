@@ -119,6 +119,9 @@ if __name__ == '__main__':
     parser_output.add_argument('-o', '--output', 
         type=str, default='conf_final.gro', metavar='PATH',
         help="output path for final system configuration (default: %(default)s)")
+    parser_output.add_argument('-t', '--topology', 
+        type=str, metavar='PATH', default=None, 
+        help="optionally write topology `[ molecules ]` directive to this path")
     parser_output.add_argument('--title', 
         type=str, default=None, 
         help="set title for output configuration")
@@ -129,6 +132,9 @@ if __name__ == '__main__':
 
     nx, ny = calc_fcc_num_sites(box_x, args.y, args.fcc_spacing)
     fcc_box_z = calc_fcc_box_z(args.fcc_nz, args.fcc_spacing)
+
+    spacing_y = (np.sqrt(3.) / 2.) * args.fcc_spacing 
+    fcc_box_y = ny * spacing_y
 
     zshifts = calc_z_shifts(args.z, fcc_box_z, args.fcc_margin)
 
@@ -145,20 +151,25 @@ if __name__ == '__main__':
         path_substrate_top = os.path.join(tmpdir, 'sub_top.gro')
         path_phases_trans = os.path.join(tmpdir, 'phases_trans.gro')
 
+        path_topol_substrate = os.path.join(tmpdir, 'topol-sub.top')
+        path_topol_phases = os.path.join(tmpdir, 'topol-phases.top')
+
         mksubstrate_args = [
             'make_LJ_substrate.py',
             str(nx), str(ny), str(args.fcc_nz),
             '--output', path_substrate,
             '--spacing', str(args.fcc_spacing),
+            '--topology', path_topol_substrate,
         ]
 
         mkphase_args = [
             'gen_two_phase_system.py',
-            str(args.x), str(args.y), str(args.z),
+            str(args.x), str(fcc_box_y), str(args.z),
             '--output', path_phases,
             '--surfactant-density', str(args.surfactant_density),
             '--separation', str(args.separation),
             '--axis', 'x',
+            '--topology', path_topol_phases,
         ]
 
         editconf_sub_bottom_args = get_editconf_translate_args(
@@ -187,15 +198,28 @@ if __name__ == '__main__':
             '--quiet',
         ]
 
+        supress_stdout = { 'stdout': subprocess.DEVNULL }
+
         try:
             subprocess.run(mksubstrate_args)
             subprocess.run(mkphase_args)
 
-            subprocess.run(editconf_sub_bottom_args)
-            subprocess.run(editconf_sub_top_args)
-            subprocess.run(editconf_phase_args)
+            subprocess.run(editconf_sub_bottom_args, **supress_stdout)
+            subprocess.run(editconf_sub_top_args, **supress_stdout)
+            subprocess.run(editconf_phase_args, **supress_stdout)
 
-            subprocess.run(combine_args)
+            subprocess.run(combine_args, **supress_stdout)
+
+            if args.topology:
+                combine_topol_args = [
+                    'cat',
+                    path_topol_substrate, 
+                    path_topol_substrate, 
+                    path_topol_phases,
+                ]
+
+                with open(args.topology, 'w') as fp:
+                    subprocess.run(combine_topol_args, stdout=fp)
 
         except FileNotFoundError as exc:
             print("error: could not find required executable ({})".format(exc))
