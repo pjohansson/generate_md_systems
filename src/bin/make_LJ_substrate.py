@@ -98,6 +98,14 @@ def print_conf(fp, points, atom_name, residue_name, box_size, title=None):
     return
 
 
+def print_topol(fp, points, topolname):
+    """Write topology `[ molecules ]` directive."""
+
+    fp.write("{} {}\n".format(len(points), topolname))
+
+    return 
+
+
 if __name__ == '__main__':
     parser = ArgumentParser()
 
@@ -127,11 +135,17 @@ if __name__ == '__main__':
     parser.add_argument(
         '-r', '--residue_name', default='CUB', metavar="NAME",
         help="Set residue name for points (default: %(default)s)")
+    
+    parser.add_argument(
+        '-t', '--topology', type=str, metavar='PATH', default=None, 
+        help="Optionally write topology `[ molecules ]` directive to this path")
+    parser.add_argument(
+        '--topology-name', type=str, metavar='NAME', default='lj-substrate',
+        help="Name of substrate in `[ molecules ]` topology directive (default: %(default)s)")
 
     parser.add_argument(
         '-q', '--quiet', action='store_true', 
-        help="Be quiet",
-    )
+        help="Be quiet")
 
     args = parser.parse_args()
 
@@ -149,6 +163,10 @@ if __name__ == '__main__':
 
     if args.output:
         fp.close()
+
+    if args.topology:
+        with open(args.topology, 'w') as fp:
+            print_topol(fp, points, args.topology_name)
 
     if not args.quiet:
         stderr.write(
