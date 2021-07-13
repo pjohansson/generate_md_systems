@@ -547,8 +547,8 @@ if __name__ == '__main__':
                 
                 """)
     parser_topol.add_argument('-t', '--topology', 
-        type=str, metavar='PATH', default=None, 
-        help="Optionally write topology `[ molecules ]` directive to this path")
+            type=str, metavar='PATH', default=None, 
+            help="optionally write topology `[ molecules ]` directive to this path")
     parser_topol.add_argument('--phase-one-topolname', 
             type=str, default='lj-chain-2',
             metavar='NAME', help='name for phase one molecules (default: %(default)s)')
