@@ -97,6 +97,9 @@ if __name__ == '__main__':
     #         help="axis along which liquid phases are set (default: %(default)s)")
 
     parser_phase = parser.add_argument_group('liquid phase options')
+    parser.add_argument('--phase2-size', 
+            type=float, default=None, metavar=('X'),
+            help="optionally set size of second phase separately to the first")
     parser_phase.add_argument('-s', '--separation', 
         type=float, default=5., metavar='DIST',
         help="separation distance between liquid phases (default: %(default)s)")
@@ -128,7 +131,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    box_x = 2. * args.x + 2. * args.separation
+    if args.phase2_size:
+        total_phase_size = args.x + args.phase2_size
+    else:
+        total_phase_size = 2. * args.x
+
+    box_x = total_phase_size + 2. * args.separation
 
     nx, ny = calc_fcc_num_sites(box_x, args.y, args.fcc_spacing)
     fcc_box_z = calc_fcc_box_z(args.fcc_nz, args.fcc_spacing)
@@ -171,6 +179,12 @@ if __name__ == '__main__':
             '--axis', 'x',
             '--topology', path_topol_phases,
         ]
+
+        if args.phase2_size:
+            mkphase_args += [
+                '--box_size_2', 
+                str(args.phase2_size), str(fcc_box_y), str(args.z),
+                ]
 
         editconf_sub_bottom_args = get_editconf_translate_args(
             path_substrate, 

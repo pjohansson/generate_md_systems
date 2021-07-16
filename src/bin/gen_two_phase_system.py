@@ -500,6 +500,37 @@ def print_topol(fp,
     return 
 
 
+def check_phase_size_axis_alignment(box_size, box_size_2, axis):
+    def axis_to_string(ax):
+        return ['x', 'y', 'z'][ax]
+
+    def check_along_axes(*axes):
+        all_good = True
+
+        for ax in axes:
+            box = box_size[ax]
+            box2 = box_size_2[ax]
+
+            if not np.isclose(box, box2):
+                stderr.write("WARNING: phase sizes are different along axis "
+                      "'{}' (1: {}, 2: {})\n".format(
+                    axis_to_string(ax),
+                    box, 
+                    box2,
+                ))
+
+                all_good = False
+        
+        return all_good
+
+    if axis == 'x':
+        return check_along_axes(1, 2)
+    elif axis == 'y':
+        return check_along_axes(0, 2)
+    else:
+        return check_along_axes(0, 1)
+
+
 if __name__ == '__main__':
     parser = ArgumentParser(
             description='Create a two-phase fluid system with surfactants.')
@@ -515,6 +546,9 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--surfactant-density',
             default=0.215, type=float, metavar='VALUE',
             help='area number density of surfactants in each interface (default: %(default)s)')
+    parser.add_argument('--box_size_2', 
+            type=float, nargs=3, default=None, metavar='SIZE',
+            help="set size of second phase instead of using `box_size`")
     parser.add_argument('-s', '--separation', 
             default=5., metavar='DZ', type=float,
             help='separation between phase one and two along z (default: %(default)s)')
@@ -564,10 +598,17 @@ if __name__ == '__main__':
 
     size_x, size_y, size_z = args.box_size
 
+    if args.box_size_2 != None:
+        size_x2, size_y2, size_z2 = args.box_size_2
+        check_phase_size_axis_alignment(args.box_size, args.box_size_2, args.axis)
+    else:
+        size_x2, size_y2, size_z2 = args.box_size
+
+
     conf_one_final = create_conf_with_size(
             conf_one, size_x, size_y, size_z, args.residue_length)
     conf_two_final = create_conf_with_size(
-            conf_two, size_x, size_y, size_z, args.residue_length)
+            conf_two, size_x2, size_y2, size_z2, args.residue_length)
 
     conf_stacked_phases = create_stack(conf_one_final, conf_two_final, 
             args.separation, args.axis)
