@@ -9,104 +9,50 @@ from argparse import ArgumentParser
 from sys import exit, stderr, stdout
 from tempfile import TemporaryDirectory
 
-
-def calc_fcc_num_sites(x, y, spacing):
-    """Calculate the number of sites along x and y."""
-
-    spacing_y = (np.sqrt(3.) / 2.) * spacing
-
-    nx = int(np.ceil(x / spacing))
-    ny = int(np.ceil(y / spacing_y))
-
-    return nx, ny
+from gen_two_phase_system import read_conf, create_conf_with_size
+from gen_two_phase_shear_system import *
+from generate_md_systems.gmx_conf_utils import write_gromos87
 
 
-def calc_fcc_box_z(nz, spacing):
-    """Calculate the height of the FCC lattice."""
-
-    spacing_z = (np.sqrt(6.) / 3.) * spacing
-
-    return nz * spacing_z
+def write_topol(fp, conf, name, residue_length):
+    """Write topology `[ molecules ]` directive."""
 
 
-def calc_z_shifts(zphase, zsubstrate, margin):
-    """Calculate shifts from z = 0 for each phase."""
-
-    shifts = {}
-
-    shifts['sub_bottom'] = margin
-
-    sub_bottom_upper_margin = shifts['sub_bottom'] + zsubstrate
-    shifts['phase'] = sub_bottom_upper_margin + margin
-
-    phase_upper_margin = shifts['phase'] + zphase
-    shifts['sub_top'] = phase_upper_margin + margin
-
-    sub_top_upper_margin = shifts['sub_top'] + zsubstrate
-    shifts['box_z'] = sub_top_upper_margin + margin
-
-    return shifts
-
-
-def get_editconf_translate_args(from_path, to_path, shift):
-    """Create cmd command to translate a configuration."""
-
-    return [
-        'gmx', 'editconf',
-        '-f', from_path,
-        '-o', to_path, 
-        '-translate', '0',  '0', str(shift),
-        '-quiet',
-    ]
-
-
-def get_output_title(title, 
-                     default_title="Two-phase system with substrates"):
-    """Get set title for output configuration or generate a default."""
-
-    if title:
-        return title
-    else:
-        now = datetime.datetime.now()
-        return default_title + ', generated at {}'.format(now)
+    return
 
 
 if __name__ == '__main__':
     parser = ArgumentParser(
         description="""
-            Generate two-phase fluid systems with surfactants at 
-            interfaces and substrates on top and bottom."""
+            Generate single-phase couette flow fluid systems with 
+            substrates on top and bottom.
+            """
     )
 
     parser.add_argument('x', 
         type=float,
-        help="size of each liquid phase along x")
+        help="size of liquid phase along x")
     parser.add_argument('y', 
         type=float,
-        help="size of each liquid phase along y")
+        help="size of liquid phase along y")
     parser.add_argument('z', 
         type=float,
-        help="size of each liquid phase along z")
-
-    # Disable this option: at least for now we only create 
-    # shear systems directed along the x axis. Otherwise 
-    # we need to decide along which axis the substrates are 
-    # defined and rotate them properly to match.
-    # parser.add_argument('-a', '--axis', 
-    #         choices=['x', 'y', 'z'], default='x', type=str.lower,
-    #         help="axis along which liquid phases are set (default: %(default)s)")
+        help="size of liquid phase along z")
 
     parser_phase = parser.add_argument_group('liquid phase options')
-    parser.add_argument('--phase2-size', 
-            type=float, default=None, metavar=('X'),
-            help="optionally set size of second phase separately to the first")
-    parser_phase.add_argument('-s', '--separation', 
-        type=float, default=5., metavar='DIST',
-        help="separation distance between liquid phases (default: %(default)s)")
-    parser_phase.add_argument('-d', '--surfactant-density', 
-        type=float, default=0.215, metavar='RHO',
-        help="areal atom number density of surfactants at each interface (default: %(default)s)")
-    
+    parser_phase.add_argument('--phase-path', 
+            default=None, type=str, metavar='PATH',
+            help="optionally set explicit path to phase configuration")
+    parser_phase.add_argument('--phase-default', 
+            default='LJ1.gro', type=str, metavar='FILE',
+            help="library configuration to use (default: %(default)s)")
+    parser_phase.add_argument('--phase-residue-length', 
+            type=int, default=2,
+            help="number of atoms per liquid molecule (default: %(default)s)")
+    parser_phase.add_argument('--phase-topolname', 
+            type=str, default='lj-chain-2',
+            help="number of atoms per liquid molecule (default: %(default)s)")
+
     parser_fcc = parser.add_argument_group('substrate options')
     parser_fcc.add_argument('--fcc-spacing', 
         type=float, default=1., metavar='DX', 
@@ -131,18 +77,12 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    if args.phase2_size:
-        total_phase_size = args.x + args.phase2_size
-    else:
-        total_phase_size = 2. * args.x
-
-    box_x = total_phase_size + 2. * args.separation
-
-    nx, ny = calc_fcc_num_sites(box_x, args.y, args.fcc_spacing)
-    fcc_box_z = calc_fcc_box_z(args.fcc_nz, args.fcc_spacing)
-
+    nx, ny = calc_fcc_num_sites(args.x, args.y, args.fcc_spacing)
     spacing_y = (np.sqrt(3.) / 2.) * args.fcc_spacing 
+
+    fcc_box_x = nx * args.fcc_spacing
     fcc_box_y = ny * spacing_y
+    fcc_box_z = calc_fcc_box_z(args.fcc_nz, args.fcc_spacing)
 
     zshifts = calc_z_shifts(args.z, fcc_box_z, args.fcc_margin)
 
@@ -176,22 +116,6 @@ if __name__ == '__main__':
             '--topology', path_topol_substrate,
         ]
 
-        mkphase_args = [
-            'gen_two_phase_system.py',
-            str(args.x), str(fcc_box_y), str(args.z),
-            '--output', path_phases,
-            '--surfactant-density', str(args.surfactant_density),
-            '--separation', str(args.separation),
-            '--axis', 'x',
-            '--topology', path_topol_phases,
-        ]
-
-        if args.phase2_size:
-            mkphase_args += [
-                '--box_size_2', 
-                str(args.phase2_size), str(fcc_box_y), str(args.z),
-                ]
-
         editconf_sub_bottom_args = get_editconf_translate_args(
             path_substrate, 
             path_substrate_bottom, 
@@ -218,28 +142,36 @@ if __name__ == '__main__':
             '--quiet',
         ]
 
-        supress_stdout = { 'stdout': subprocess.DEVNULL }
+        suppress_stdout = { 'stdout': subprocess.DEVNULL }
 
         try:
+            # Creating and writing the single liquid phase is done internally,
+            # without calling an external command as prepared above.
+            conf_orig = read_conf(args.phase_path, args.phase_default)
+            conf_final = create_conf_with_size(
+                conf_orig, fcc_box_x, fcc_box_y, args.z, args.phase_residue_length)
+            write_gromos87(path_phases, conf_final)
+
             subprocess.run(mksubstrate_args)
-            subprocess.run(mkphase_args)
 
-            subprocess.run(editconf_sub_bottom_args, **supress_stdout)
-            subprocess.run(editconf_sub_top_args, **supress_stdout)
-            subprocess.run(editconf_phase_args, **supress_stdout)
+            subprocess.run(editconf_sub_bottom_args, **suppress_stdout)
+            subprocess.run(editconf_sub_top_args, **suppress_stdout)
+            subprocess.run(editconf_phase_args, **suppress_stdout)
 
-            subprocess.run(combine_args, **supress_stdout)
+            subprocess.run(combine_args, **suppress_stdout)
 
             if args.topology:
                 combine_topol_args = [
                     'cat',
                     path_topol_substrate, 
                     path_topol_substrate, 
-                    path_topol_phases,
                 ]
 
                 with open(args.topology, 'w') as fp:
                     subprocess.run(combine_topol_args, stdout=fp)
+
+                    num_mols = len(conf_final.atoms) // args.phase_residue_length
+                    fp.write(f"{args.phase_topolname} {num_mols}\n")
 
         except FileNotFoundError as exc:
             print("error: could not find required executable ({})".format(exc))
