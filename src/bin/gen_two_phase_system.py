@@ -5,9 +5,9 @@ import os
 import subprocess
 
 from generate_md_systems import two_phase
+from generate_md_systems.gmx_conf_utils import *
 
 from argparse import ArgumentParser
-from gmxutils import *
 from sys import exit, stderr, stdout
 from tempfile import TemporaryDirectory
 

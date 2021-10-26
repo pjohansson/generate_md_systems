@@ -2,9 +2,10 @@
 
 import datetime
 
+from generate_md_systems.gmx_conf_utils import * 
+
 from argparse import ArgumentParser
 from sys import stderr, stdout 
-from gmxutils import * 
 
 
 def get_largest_box_size(confs, use_box_size):
