@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-import two_phase
 import numpy as np
 import os
 import subprocess
+
+from generate_md_systems import two_phase
 
 from argparse import ArgumentParser
 from gmxutils import *
