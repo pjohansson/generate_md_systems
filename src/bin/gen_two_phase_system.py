@@ -11,6 +11,8 @@ from argparse import ArgumentParser
 from sys import exit, stderr, stdout
 from tempfile import TemporaryDirectory
 
+from create_gro_conf import create_conf_with_size
+
 # Surfactant molecule area density in interface (used in other simulations)
 # sur_area_density = (344 / 2) / (40. * 20.)
 sur_residue_length = 2
@@ -64,136 +66,6 @@ def read_conf(path, default_path, default_dir='include'):
         exit(1)
 
     return conf
-
-
-def calc_volume(conf):
-    """Calculate the box volume."""
-
-    dx, dy, dz = conf.box_size
-    volume = dx * dy * dz
-
-    return volume
-
-
-def calc_density(conf, residue_length):
-    """Calculate the molecule number density inside the configuration."""
-
-    num_atoms = len(conf.atoms)
-
-    assert num_atoms % residue_length == 0
-
-    num_mols = num_atoms // residue_length
-
-    return num_mols / calc_volume(conf)
-
-
-def stack_conf_to_minimum_size(conf, to_size_x, to_size_y, to_size_z):
-    """Stack multiples of the configuration to a minimum final size.
-    
-    Note that this only stacks the boxes, it does not cut the 
-    configuration to the correct size. It only guarantuees that
-    the output size is at least this large.
-    
-    """
-
-    def move_atom(atom, ix, iy, iz, dx, dy, dz):
-        x = atom.position.x + ix * dx
-        y = atom.position.y + iy * dy
-        z = atom.position.z + iz * dz
-
-        return Atom(
-                name=atom.name,
-                residue=atom.residue,
-                position=Vec3(x, y, z),
-                velocity=atom.velocity,
-                )
-
-    size_x, size_y, size_z = conf.box_size
-
-    nx = int(np.ceil(to_size_x / size_x))
-    ny = int(np.ceil(to_size_y / size_y))
-    nz = int(np.ceil(to_size_z / size_z))
-
-    atoms = conf.atoms.copy()
-
-    for ix in range(nx):
-        for iy in range(ny):
-            for iz in range(nz):
-                if ix > 0 or iy > 0 or iz > 0:
-                    atoms += [
-                        move_atom(atom, ix, iy, iz, size_x, size_y, size_z) 
-                        for atom in conf.atoms]
-
-    box_size = size_x * nx, size_y * ny, size_z * nz
-
-    return Gromos87(
-            title=conf.title,
-            box_size=box_size,
-            atoms=atoms,
-            )
-
-
-def cut_conf_to_size(conf, xmax, ymax, zmax, residue_length):
-    """Cut a configuration to the set size.
-    
-    Molecules are kept if any of their atoms lie inside the box.
-
-    """
-
-    def check_atom(atom, xmax, ymax, zmax):
-        return (atom.position.x <= xmax 
-                and atom.position.y <= ymax
-                and atom.position.z <= zmax)
-
-    # Keep molecule if any atom is inside, else discard
-    def check_molecule(atoms, xmax, ymax, zmax):
-        return np.any(
-            [check_atom(atom, xmax, ymax, zmax) for atom in atoms])
-
-    num_mols = len(conf.atoms) // residue_length
-    kept_atoms = []
-
-    for i in range(num_mols):
-        i0 = i * residue_length
-        i1 = (i + 1) * residue_length
-
-        atoms = conf.atoms[i0:i1]
-
-        if check_molecule(atoms, xmax, ymax, zmax):
-            kept_atoms += atoms
-
-    box_size = xmax, ymax, zmax
-
-    return Gromos87(
-            title=conf.title,
-            box_size=box_size,
-            atoms=kept_atoms
-            )
-
-
-def correct_conf_density(conf, residue_length):
-    """Correct the configuration to the set molecule density."""
-
-    density = calc_density(conf, residue_length)
-    volume = calc_volume(conf)
-
-    target_num_mols = int(density * volume)
-    num_mols = len(conf.atoms) // residue_length
-
-    if target_num_mols != num_mols:
-        stderr.write("warning: created number of molecules ({}) differs from the target number of molecules ({})\n".format(num_mols, target_num_mols))
-
-    return conf
-
-
-def create_conf_with_size(conf, size_x, size_y, size_z, residue_length):
-    """Expand or cut the given configuration to the set size."""
-
-    conf_stacked = stack_conf_to_minimum_size(conf, size_x, size_y, size_z)
-    conf_resized = cut_conf_to_size(conf_stacked, size_x, size_y, size_z, residue_length)
-    conf_final = correct_conf_density(conf_resized, residue_length)
-
-    return conf_final
 
 
 def translate_atoms(atoms, shift, axis):
@@ -607,9 +479,9 @@ if __name__ == '__main__':
 
 
     conf_one_final = create_conf_with_size(
-            conf_one, size_x, size_y, size_z, args.residue_length)
+            conf_one, size_x, size_y, size_z, residue_length=sur_residue_length)
     conf_two_final = create_conf_with_size(
-            conf_two, size_x2, size_y2, size_z2, args.residue_length)
+            conf_two, size_x2, size_y2, size_z2, residue_length=sur_residue_length)
 
     conf_stacked_phases = create_stack(conf_one_final, conf_two_final, 
             args.separation, args.axis)
