@@ -18,19 +18,6 @@ from create_gro_conf import create_conf_with_size
 sur_residue_length = 2
 
 
-def verify_conf_is_monotype(conf):
-    """Asserts that all residues in the configuration are identical.
-    
-    Raises an `AssertionError` otherwise.
-    
-    """
-
-    head_residue = conf.atoms[0].residue
-
-    for atom in conf.atoms[1:]:
-        assert atom.residue == head_residue
-
-
 def read_conf(path, default_path, default_dir='include'):
     """Read a configuration either from a given path or the database.
     
@@ -38,6 +25,18 @@ def read_conf(path, default_path, default_dir='include'):
     the files included with the module `two_phase`.
 
     """
+
+    def verify_conf_is_monotype(conf):
+        """Asserts that all residues in the configuration are identical.
+        
+        Raises an `AssertionError` otherwise.
+        
+        """
+
+        head_residue = conf.atoms[0].residue
+
+        for atom in conf.atoms[1:]:
+            assert atom.residue == head_residue
 
     if not path:
         for module_dir in two_phase.__path__:
