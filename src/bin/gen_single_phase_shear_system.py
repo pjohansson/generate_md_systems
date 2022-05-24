@@ -9,9 +9,9 @@ from argparse import ArgumentParser
 from sys import exit, stderr, stdout
 from tempfile import TemporaryDirectory
 
-from gen_two_phase_system import read_conf, create_conf_with_size
-from gen_two_phase_shear_system import *
-from generate_md_systems.gmx_conf_utils import write_gromos87
+from .gen_two_phase_system import read_conf
+from .gen_two_phase_shear_system import *
+from generate_md_systems.gmx_conf_utils import write_gromos87, create_gromos87_conf_with_size
 
 
 def write_topol(fp, conf, name, residue_length):
@@ -148,7 +148,7 @@ if __name__ == '__main__':
             # Creating and writing the single liquid phase is done internally,
             # without calling an external command as prepared above.
             conf_orig = read_conf(args.phase_path, args.phase_default)
-            conf_final = create_conf_with_size(
+            conf_final = create_gromos87_conf_with_size(
                 conf_orig, fcc_box_x, fcc_box_y, args.z, args.phase_residue_length)
             write_gromos87(path_phases, conf_final)
 

@@ -13,9 +13,8 @@ from collections.abc import Iterable, Sequence
 
 from generate_md_systems import single_phase
 from generate_md_systems.gmx_conf_utils import read_gromos87, write_gromos87
-from create_gro_conf import create_conf_with_size
-from gen_two_phase_shear_system import *
-from generate_md_systems.gmx_conf_utils.io import Gromos87
+from .gen_two_phase_shear_system import *
+from generate_md_systems.gmx_conf_utils import Gromos87, create_gromos87_conf_with_size
 
 
 @dataclass
@@ -253,7 +252,7 @@ if __name__ == '__main__':
         topdata_slabs = []
 
         for slab, fnslab in zip(slabs, paths_slabs):
-            conf = create_conf_with_size(
+            conf = create_gromos87_conf_with_size(
                 conf_orig, fcc_box_x, fcc_box_y, slab.thickness,
                 residue_length=args.residue_length,
                 translate=[0., 0., slab.z0])

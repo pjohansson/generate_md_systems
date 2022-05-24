@@ -67,7 +67,7 @@ if __name__ == '__main__':
         type=str, default=None, 
         help="set output configuration title")
     parser.add_argument('--box_size', 
-        nargs=3, type=float, metavar=('X', 'Y', 'Z'),
+        nargs=3, type=float, metavar=('X', 'Y', 'Z'), default=(-1, -1, -1),
         help="set output box size (use <0 to not change)")
     parser.add_argument('-q', '--quiet', 
         action='store_true', 

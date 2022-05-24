@@ -11,8 +11,6 @@ from argparse import ArgumentParser
 from sys import exit, stderr, stdout
 from tempfile import TemporaryDirectory
 
-from create_gro_conf import create_conf_with_size
-
 # Surfactant molecule area density in interface (used in other simulations)
 # sur_area_density = (344 / 2) / (40. * 20.)
 sur_residue_length = 2
@@ -477,9 +475,9 @@ if __name__ == '__main__':
         size_x2, size_y2, size_z2 = args.box_size
 
 
-    conf_one_final = create_conf_with_size(
+    conf_one_final = create_gromos87_conf_with_size(
             conf_one, size_x, size_y, size_z, residue_length=sur_residue_length)
-    conf_two_final = create_conf_with_size(
+    conf_two_final = create_gromos87_conf_with_size(
             conf_two, size_x2, size_y2, size_z2, residue_length=sur_residue_length)
 
     conf_stacked_phases = create_stack(conf_one_final, conf_two_final, 
