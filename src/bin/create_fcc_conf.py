@@ -7,7 +7,7 @@ from argparse import ArgumentParser
 from collections import namedtuple
 from dataclasses import dataclass
 from sys import exit, stderr
-from typing import Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 from generate_md_systems.gmx_conf_utils import (
     Atom,
@@ -26,14 +26,15 @@ class AtomSpec:
 
 @dataclass
 class LatticeSpec:
-    title: str 
+    title: str
     nx: int
-    ny: int 
-    nz: int 
+    ny: int
+    nz: int
     spacing: float
     residue_name: str
     atoms: list[AtomSpec]
     layers: dict[int, str]
+    translate: tuple[float, float, float]
 
 def read_fcc_spec(path: str) -> LatticeSpec:
     def read_value(category: str, key: str, of_type):
@@ -42,10 +43,26 @@ def read_fcc_spec(path: str) -> LatticeSpec:
         except KeyError:
             raise Exception(f"missing field `{key} = {of_type.__name__}` in [ {category} ]")
 
-    def read_site(v) -> AtomSpec:
+    def check_vec3(value: Sequence[Any]) -> tuple[float, float, float]:
+        x, y, z = value
+        return (float(x), float(y), float(z))
+
+    def read_site(site_def) -> AtomSpec:
+        try:
+            name = site_def['name']
+        except KeyError:
+            raise Exception(f"missing field `name = str` in atoms.sites")
+
+        try:
+            dx, dy, dz = check_vec3(site_def['dx'])
+        except KeyError:
+            raise Exception(f"missing field `dx = [float, float, float]` in atoms.sites (atom name  = {name})")
+        except ValueError as exc:
+            raise Exception(f"expected `dx = [float, float, float] in atoms.sites (atom name = {name})")
+
         return AtomSpec(
-            name=v['name'],
-            dx=tuple(v['dx']),
+            name,
+            dx=(dx, dy, dz),
         )
 
     try:
@@ -65,12 +82,8 @@ def read_fcc_spec(path: str) -> LatticeSpec:
         atom_name = read_value('atoms', 'name', str)
     except:
         atom_name = residue_name
-    
-    try:
-        atoms = [read_site(v) for v in read_value('atoms', 'sites', list)]
-    except Exception as exc:
-        print(exc)
-        exit(1)
+
+    atoms = [read_site(v) for v in read_value('atoms', 'sites', list)]
 
     if atoms == []:
         atoms = [AtomSpec(name=atom_name, dx=(0., 0., 0.))]
@@ -82,6 +95,15 @@ def read_fcc_spec(path: str) -> LatticeSpec:
     except ValueError as exc:
         raise Exception(f"invalid layer index in [ layers ] ({exc})")
 
+    try:
+        translate = check_vec3(read_value('system', 'translate', list))
+    except KeyError:
+        raise Exception(f"missing field `translate = [float, float, float]`")
+    except ValueError as exc:
+        raise Exception(f"expected `translate = [float, float, float])")
+    except Exception:
+        translate = (0., 0., 0.)
+
     return LatticeSpec(
         title,
         nx,
@@ -91,6 +113,7 @@ def read_fcc_spec(path: str) -> LatticeSpec:
         residue_name,
         atoms,
         layers,
+        translate,
     )
 
 
@@ -195,14 +218,19 @@ def map_atom_data_to_lattice_points(
     lattice_points: list[tuple[float, float, float]],
     sites: Sequence[AtomSpec],
     residue_name: str,
+    translate: tuple[float, float, float]
 ) -> list[Atom]:
     atoms = []
+    x0, y0, z0 = translate
 
-    for x0, y0, z0 in lattice_points:
+    for x, y, z in lattice_points:
+        x1 = x0 + x
+        y1 = y0 + y
+        z1 = z0 + z
+
         for site in sites:
-            print(site)
             dx, dy, dz = site.dx
-            x = (x0 + dx, y0 + dy, z0 + dz)
+            x = (x1 + dx, y1 + dy, z1 + dz)
 
             atoms.append(Atom(x, None, site.name, residue_name))
 
@@ -215,7 +243,7 @@ if __name__ == '__main__':
     )
 
     parser.add_argument(
-        'conf', 
+        'conf',
         help="path to FCC lattice specification file",
     )
     parser.add_argument(
@@ -268,6 +296,7 @@ if __name__ == '__main__':
         lattice_points,
         fcc_spec.atoms,
         fcc_spec.residue_name,
+        fcc_spec.translate
     )
 
     conf = Gromos87(
