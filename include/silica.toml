@@ -1,0 +1,47 @@
+[ system ]
+title = "SiO2 quadrupole example"
+description = "Example of FCC lattice specification file with several atoms per lattice site"
+
+nx = 60
+ny = 9
+nz = 41
+spacing = 0.4469
+
+[ atoms ]
+residue = "SIO"
+sites = [
+    { name = "O1", dx = [0.0, 0.0, -0.5] },
+    { name = "SI", dx = [0.0, 0.0, 0.0] },
+    { name = "O2", dx = [0.0, 0.0, +0.5] },
+]
+
+
+[ layers ]
+# Empty string = all empty (also: '-', and default if layer is not specified)
+40 = ""
+39 = ""
+# '+' character = all full
+38 = "+"
+37 = "+"
+36 = "+"
+35 = "+"
+# For each lattice site along x: 
+#   0 = empty site
+#   1 = atom at site
+34  = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+33  = " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+32  = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+31  = " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+# ... (layers between not specified = all empty)
+9   = " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+8   = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+7   = " 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+6   = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "
+# '+' character = all full
+5   = "+"
+4   = "+"
+3   = "+"
+2   = "+"
+# Empty string = all empty (also: '-', and default if layer is not specified)
+1   = ""
+0   = ""

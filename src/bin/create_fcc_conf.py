@@ -20,14 +20,19 @@ from generate_md_systems.gmx_conf_utils import (
 Spacing = namedtuple('FccSpacing', ['dx', 'dy', 'dz', 'dx_y', 'dx_z', 'dy_z'])
 
 @dataclass
+class AtomSpec:
+    name: str
+    dx: tuple[float, float, float]
+
+@dataclass
 class LatticeSpec:
     title: str 
     nx: int
     ny: int 
     nz: int 
     spacing: float
-    atom_name: str 
     residue_name: str
+    atoms: list[AtomSpec]
     layers: dict[int, str]
 
 def read_fcc_spec(path: str) -> LatticeSpec:
@@ -36,6 +41,12 @@ def read_fcc_spec(path: str) -> LatticeSpec:
             return of_type(fcc_toml[category][key])
         except KeyError:
             raise Exception(f"missing field `{key} = {of_type.__name__}` in [ {category} ]")
+
+    def read_site(v) -> AtomSpec:
+        return AtomSpec(
+            name=v['name'],
+            dx=tuple(v['dx']),
+        )
 
     try:
         fcc_toml = toml.load(path)
@@ -48,8 +59,21 @@ def read_fcc_spec(path: str) -> LatticeSpec:
     nz = read_value('system', 'nz', int)
     spacing = read_value('system', 'spacing', float)
 
-    atom_name = read_value('atoms', 'name', str)
     residue_name = read_value('atoms', 'residue', str)
+
+    try:
+        atom_name = read_value('atoms', 'name', str)
+    except:
+        atom_name = residue_name
+    
+    try:
+        atoms = [read_site(v) for v in read_value('atoms', 'sites', list)]
+    except Exception as exc:
+        print(exc)
+        exit(1)
+
+    if atoms == []:
+        atoms = [AtomSpec(name=atom_name, dx=(0., 0., 0.))]
 
     layers_spec = fcc_toml.get('layers', {})
 
@@ -64,8 +88,8 @@ def read_fcc_spec(path: str) -> LatticeSpec:
         ny,
         nz,
         spacing,
-        atom_name,
         residue_name,
+        atoms,
         layers,
     )
 
@@ -169,13 +193,20 @@ def gen_fcc_layer(
 
 def map_atom_data_to_lattice_points(
     lattice_points: list[tuple[float, float, float]],
-    atom_name: str,
+    sites: Sequence[AtomSpec],
     residue_name: str,
 ) -> list[Atom]:
-    return [
-        Atom(p, None, atom_name, residue_name)
-        for p in lattice_points
-    ]
+    atoms = []
+
+    for x0, y0, z0 in lattice_points:
+        for site in sites:
+            print(site)
+            dx, dy, dz = site.dx
+            x = (x0 + dx, y0 + dy, z0 + dz)
+
+            atoms.append(Atom(x, None, site.name, residue_name))
+
+    return atoms
 
 
 if __name__ == '__main__':
@@ -235,7 +266,7 @@ if __name__ == '__main__':
 
     atoms = map_atom_data_to_lattice_points(
         lattice_points,
-        fcc_spec.atom_name,
+        fcc_spec.atoms,
         fcc_spec.residue_name,
     )
 
