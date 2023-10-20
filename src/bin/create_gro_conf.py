@@ -32,6 +32,11 @@ if __name__ == '__main__':
         type=float,
         help="size of system along z")
 
+    parser.add_argument('-l', '--residue-length',
+        default=1, type=int, metavar='N',
+        help="number of atoms per molecule (residue) (default: %(default)s)",
+    )
+
     parser.add_argument('--translate',
         default=None, nargs=3, metavar=('DX', 'DY', 'DZ'), type=float,
         help="translate final configuration")
@@ -51,9 +56,12 @@ if __name__ == '__main__':
 
     conf = read_gromos87(args.input)
     conf_final = create_gromos87_conf_with_size(
-        conf, args.x, args.y, args.z, translate=args.translate)
-    
+        conf, args.x, args.y, args.z,
+        residue_length=args.residue_length,
+        translate=args.translate)
+
     if args.output == None:
         write_gromos87_stdout(conf_final)
     else:
         write_gromos87(args.output, conf_final)
+
