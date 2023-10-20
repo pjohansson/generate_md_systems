@@ -19,16 +19,16 @@ if __name__ == '__main__':
             """
     )
 
-    parser.add_argument('input', 
+    parser.add_argument('input',
         type=str, metavar='PATH',
         help="path to original configuration")
-    parser.add_argument('x', 
+    parser.add_argument('x',
         type=float,
         help="size of system along x")
-    parser.add_argument('y', 
+    parser.add_argument('y',
         type=float,
         help="size of system along y")
-    parser.add_argument('z', 
+    parser.add_argument('z',
         type=float,
         help="size of system along z")
 
@@ -37,14 +37,14 @@ if __name__ == '__main__':
         help="translate final configuration")
 
     parser_output = parser.add_argument_group('output options')
-    parser_output.add_argument('-o', '--output', 
+    parser_output.add_argument('-o', '--output',
         type=str, default=None, metavar='PATH',
         help="output path for final system configuration (default: print to stdout)")
-    parser_output.add_argument('-t', '--topology', 
-        type=str, metavar='PATH', default=None, 
+    parser_output.add_argument('-t', '--topology',
+        type=str, metavar='PATH', default=None,
         help="optionally write topology `[ molecules ]` directive to this path")
-    parser_output.add_argument('--title', 
-        type=str, default="Lennard-Jones slab system", 
+    parser_output.add_argument('--title',
+        type=str, default="Lennard-Jones slab system",
         help="set title for output configuration")
 
     args = parser.parse_args()
@@ -57,4 +57,3 @@ if __name__ == '__main__':
         write_gromos87_stdout(conf_final)
     else:
         write_gromos87(args.output, conf_final)
-    

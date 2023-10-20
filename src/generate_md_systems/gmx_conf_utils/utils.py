@@ -39,14 +39,14 @@ def translate_gromos87(
 
 
 def stack_gromos87_conf_to_minimum_size(
-    conf: Gromos87, 
-    to_size_x: float, 
-    to_size_y: float, 
+    conf: Gromos87,
+    to_size_x: float,
+    to_size_y: float,
     to_size_z: float,
 ) -> Gromos87:
     """Stack multiples of the configuration to a minimum final size.
 
-    Note that this only stacks the boxes, it does not cut the 
+    Note that this only stacks the boxes, it does not cut the
     configuration to the correct size. It only guarantuees that
     the output size is at least this large.
 
@@ -90,10 +90,10 @@ def stack_gromos87_conf_to_minimum_size(
 
 
 def cut_gromos87_conf_to_size(
-    conf: Gromos87, 
-    xmax: float, 
-    ymax: float, 
-    zmax: float, 
+    conf: Gromos87,
+    xmax: float,
+    ymax: float,
+    zmax: float,
     residue_length: int = 1,
 ) -> Gromos87:
     """Cut a configuration to the set size.
