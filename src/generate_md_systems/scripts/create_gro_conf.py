@@ -64,4 +64,3 @@ def main():
         write_gromos87_stdout(conf_final)
     else:
         write_gromos87(args.output, conf_final)
-

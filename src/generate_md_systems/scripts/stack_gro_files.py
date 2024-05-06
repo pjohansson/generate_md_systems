@@ -8,7 +8,7 @@ def get_box_size(
     box_size_per_conf: list[tuple[float, float, float]],
     axis: str,
     separation: float,
-    add_edges: float, 
+    add_edges: float,
 ) -> tuple[float, float, float]:
     max_x = 0.
     max_y = 0.
@@ -18,12 +18,12 @@ def get_box_size(
     height = 2. * add_edges + num_separations * separation
 
     for box_x, box_y, box_z in box_size_per_conf:
-        if box_x > max_x: 
-            max_x = box_x 
-        if box_y > max_y: 
-            max_y = box_y 
-        if box_z > max_z: 
-            max_z = box_z 
+        if box_x > max_x:
+            max_x = box_x
+        if box_y > max_y:
+            max_y = box_y
+        if box_z > max_z:
+            max_z = box_z
 
         if axis == 'x':
             height += box_x
@@ -38,7 +38,7 @@ def get_box_size(
         max_y = height
     else:
         max_z = height
-    
+
     return Vec3(x=max_x, y=max_y, z=max_z)
 
 
@@ -46,7 +46,7 @@ def main():
     parser = ArgumentParser()
 
     parser.add_argument(
-        'paths', 
+        'paths',
         nargs='+', metavar='PATH',
         help=".gro files to stack",
     )
@@ -72,7 +72,7 @@ def main():
     )
     parser.add_argument(
         '-t', '--title',
-        default=None, 
+        default=None,
         help="set title of output configuration",
     )
 
@@ -86,11 +86,11 @@ def main():
     title = args.title
 
     if args.axis == 'x':
-        translate[0] = args.add_edges 
+        translate[0] = args.add_edges
     elif args.axis == 'y':
-        translate[1] = args.add_edges 
+        translate[1] = args.add_edges
     else:
-        translate[2] = args.add_edges 
+        translate[2] = args.add_edges
 
     for path in args.paths:
         conf = translate_gromos87(read_gromos87(path), *translate)
@@ -107,7 +107,7 @@ def main():
             translate[1] += conf.box_size.y + args.separation
         else:
             translate[2] += conf.box_size.z + args.separation
-    
+
     box_size = get_box_size(box_size_per_conf, args.axis, args.separation, args.add_edges)
     conf_stacked = Gromos87(title, atoms, box_size)
 

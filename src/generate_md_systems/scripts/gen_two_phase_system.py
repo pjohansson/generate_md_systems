@@ -18,7 +18,7 @@ sur_residue_length = 2
 
 def read_conf(path, default_path, default_dir='include'):
     """Read a configuration either from a given path or the database.
-    
+
     If the input `path` is `None` the `default_path` is used to access
     the files included with the module `two_phase`.
 
@@ -26,9 +26,9 @@ def read_conf(path, default_path, default_dir='include'):
 
     def verify_conf_is_monotype(conf):
         """Asserts that all residues in the configuration are identical.
-        
+
         Raises an `AssertionError` otherwise.
-        
+
         """
 
         head_residue = conf.atoms[0].residue
@@ -51,7 +51,7 @@ def read_conf(path, default_path, default_dir='include'):
                 "was it installed correctly with the module? "
                 "(full path: '{}')\n".format(default_path, path))
             exit(1)
-    
+
     conf = read_gromos87(path)
 
     try:
@@ -99,7 +99,7 @@ def create_stack(conf_one, conf_two, separation, axis):
         d = 1
     else:
         d = 2
-    
+
     size1 = conf_one.box_size[d]
     size2 = conf_two.box_size[d]
 
@@ -128,8 +128,8 @@ def create_stack(conf_one, conf_two, separation, axis):
             )
 
 
-def get_surfactant_conf(conf_one, conf_two, 
-                        separation, conf_stacked, 
+def get_surfactant_conf(conf_one, conf_two,
+                        separation, conf_stacked,
                         sur_area_density, axis):
     """Generate surfactants at both interfaces."""
 
@@ -153,7 +153,7 @@ def get_surfactant_conf(conf_one, conf_two,
                     name=atom.name,
                     residue=atom.residue,
                 )
-            
+
             return [rotate_single_atom(atom) for atom in atoms]
 
         box_x, box_y, box_z = conf.box_size
@@ -192,36 +192,36 @@ def get_surfactant_conf(conf_one, conf_two,
             box_size=box_size,
         )
 
-    # `gen_surfactant` only generates interfaces normal to z. 
+    # `gen_surfactant` only generates interfaces normal to z.
     #
     # To get around this we make a transform into our box:
     #   `sz` here contains our box size along the target `axis`,
     #   `sx`, `sy` the box sizes transverse to it.
     #
-    # These will be used for the surfactant generation, after 
+    # These will be used for the surfactant generation, after
     # which we rotate the box to our actual axis
     #
-    # Note: We here first to the rotation and then translation 
-    # separately. This could be done in a single which would 
-    # likely save some cycles. But since there generally are 
-    # not that many surfactant molecules we leave it like this 
+    # Note: We here first to the rotation and then translation
+    # separately. This could be done in a single which would
+    # likely save some cycles. But since there generally are
+    # not that many surfactant molecules we leave it like this
     # for now.
 
     box_full_x, box_full_y, box_full_z = conf_stacked.box_size
 
-    if axis == 'x': 
+    if axis == 'x':
         d = 0
         sx = box_full_z
-        sy = box_full_y 
+        sy = box_full_y
         sz = box_full_x
     elif axis == 'y':
         d = 1
-        sx = box_full_x 
-        sy = box_full_z 
+        sx = box_full_x
+        sy = box_full_z
         sz = box_full_y
     else:
         d = 2
-        sx = box_full_x 
+        sx = box_full_x
         sy = box_full_y
         sz = box_full_z
 
@@ -248,8 +248,8 @@ def get_surfactant_conf(conf_one, conf_two,
             '--full-gromos87',
             ]
 
-    # `gen_surfactant` can write to standard output, so we 
-    # open a temporary file to pipe into. We then read the 
+    # `gen_surfactant` can write to standard output, so we
+    # open a temporary file to pipe into. We then read the
     # configuration of surfactants from that file.
     #
     # Very convoluted.
@@ -264,7 +264,7 @@ def get_surfactant_conf(conf_one, conf_two,
                 exit(1)
 
         conf_surfactants = read_gromos87(path)
-    
+
     return rotate_conf_to_axis(conf_surfactants, axis)
 
 
@@ -284,13 +284,13 @@ def get_final_conf(conf_stacked_phases, conf_surfactants):
 
 
 def get_posres(conf, mol_len=1., invert_first=True):
-    """Generate position restraint coordinates. 
-    
+    """Generate position restraint coordinates.
+
     To be honest I don't remember exactly what this function does.
-    It's very weird, like this program overall. 
-    
+    It's very weird, like this program overall.
+
     Great coding, past Petter.
-    
+
     """
 
     def center_z(atoms, invert):
@@ -349,9 +349,9 @@ def get_posres(conf, mol_len=1., invert_first=True):
             )
 
 
-def print_topol(fp, 
-                conf_one, conf_two, conf_sur, 
-                name_one, name_two, name_sur, 
+def print_topol(fp,
+                conf_one, conf_two, conf_sur,
+                name_one, name_two, name_sur,
                 residue_length):
     """Write topology `[ molecules ]` directive."""
 
@@ -367,7 +367,7 @@ def print_topol(fp,
         if num_surfactants > 0:
             fp.write("{} {}\n".format(name_sur, num_surfactants))
 
-    return 
+    return
 
 
 def check_phase_size_axis_alignment(box_size, box_size_2, axis):
@@ -385,12 +385,12 @@ def check_phase_size_axis_alignment(box_size, box_size_2, axis):
                 stderr.write("WARNING: phase sizes are different along axis "
                       "'{}' (1: {}, 2: {})\n".format(
                     axis_to_string(ax),
-                    box, 
+                    box,
                     box2,
                 ))
 
                 all_good = False
-        
+
         return all_good
 
     if axis == 'x':
@@ -405,55 +405,55 @@ def main():
     parser = ArgumentParser(
             description='Create a two-phase fluid system with surfactants.')
 
-    parser.add_argument('box_size', 
-            nargs=3, metavar='SIZE', type=float, 
+    parser.add_argument('box_size',
+            nargs=3, metavar='SIZE', type=float,
             help="Size of each fluid phase along x, y and z.")
 
-    parser.add_argument('-a', '--axis', 
-            choices=['x', 'y', 'z'], default='z', 
+    parser.add_argument('-a', '--axis',
+            choices=['x', 'y', 'z'], default='z',
             type=str.lower, # makes the choices case insensitive
             help="axis along which to create separate phases")
     parser.add_argument('-d', '--surfactant-density',
             default=0.215, type=float, metavar='VALUE',
             help='area number density of surfactants in each interface (default: %(default)s)')
-    parser.add_argument('--box_size_2', 
+    parser.add_argument('--box_size_2',
             type=float, nargs=3, default=None, metavar='SIZE',
             help="set size of second phase instead of using `box_size`")
-    parser.add_argument('-s', '--separation', 
+    parser.add_argument('-s', '--separation',
             default=5., metavar='DZ', type=float,
             help='separation between phase one and two along z (default: %(default)s)')
 
     parser_output = parser.add_argument_group('output options',
             description='Options for writing output files.')
-    parser_output.add_argument('-o', '--output', 
-            type=str, default='conf_two_phase.gro', metavar='PATH', 
+    parser_output.add_argument('-o', '--output',
+            type=str, default='conf_two_phase.gro', metavar='PATH',
             help='write configuration to file at this path (default: %(default)s)')
-    parser_output.add_argument('-r', '--posres-output', 
-            type=str, default=None, metavar='PATH', 
+    parser_output.add_argument('-r', '--posres-output',
+            type=str, default=None, metavar='PATH',
             help='optionally write position restraints to file at this path')
 
     parser_input = parser.add_argument_group('input configuration options')
-    parser_input.add_argument('--phase-one', 
-            type=str, default=None, metavar='PATH', 
+    parser_input.add_argument('--phase-one',
+            type=str, default=None, metavar='PATH',
             help='path to phase one base configuration file')
-    parser_input.add_argument('--phase-two', 
-            type=str, default=None, metavar='PATH', 
+    parser_input.add_argument('--phase-two',
+            type=str, default=None, metavar='PATH',
             help='path to phase two base configuration file')
-    parser_input.add_argument('--residue-length', 
+    parser_input.add_argument('--residue-length',
             default=2, type=int, metavar='N',
             help='number of atoms per fluid molecule (default: %(default)s)')
 
     parser_topol = parser.add_argument_group('topology options',
             description="""
-                Options which affect the written output in the topology 
-                format (Gromacs .top files). This output lists the created 
+                Options which affect the written output in the topology
+                format (Gromacs .top files). This output lists the created
                 molecule groups with their name and number of molecules.
-                
+
                 """)
-    parser_topol.add_argument('-t', '--topology', 
-            type=str, metavar='PATH', default=None, 
+    parser_topol.add_argument('-t', '--topology',
+            type=str, metavar='PATH', default=None,
             help="optionally write topology `[ molecules ]` directive to this path")
-    parser_topol.add_argument('--phase-one-topolname', 
+    parser_topol.add_argument('--phase-one-topolname',
             type=str, default='lj-chain-2',
             metavar='NAME', help='name for phase one molecules (default: %(default)s)')
     parser_topol.add_argument('--phase-two-topolname', type=str, default='lj-chain-2-B',
@@ -480,7 +480,7 @@ def main():
     conf_two_final = create_gromos87_conf_with_size(
             conf_two, size_x2, size_y2, size_z2, residue_length=sur_residue_length)
 
-    conf_stacked_phases = create_stack(conf_one_final, conf_two_final, 
+    conf_stacked_phases = create_stack(conf_one_final, conf_two_final,
             args.separation, args.axis)
 
     if args.surfactant_density > 0.:
@@ -499,7 +499,7 @@ def main():
 
     if args.topology:
         with open(args.topology, 'w') as fp:
-            print_topol(fp, 
+            print_topol(fp,
                         conf_one_final, conf_two_final, conf_surfactants,
-                        args.phase_one_topolname, args.phase_two_topolname, 
+                        args.phase_one_topolname, args.phase_two_topolname,
                         args.surfactant_topolname, args.residue_length)

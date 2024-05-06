@@ -25,10 +25,10 @@ class Slab:
     z0: float
 
 
-@dataclass 
+@dataclass
 class FluidPhaseDefs:
-    liquid0: Slab 
-    liquid1: Slab 
+    liquid0: Slab
+    liquid1: Slab
     gas: Slab
 
 

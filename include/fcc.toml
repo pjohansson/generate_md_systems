@@ -20,7 +20,7 @@ residue = "CUB"
 37 = "+"
 36 = "+"
 35 = "+"
-# For each lattice site along x: 
+# For each lattice site along x:
 #   0 = empty site
 #   1 = atom at site
 34  = "0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 "

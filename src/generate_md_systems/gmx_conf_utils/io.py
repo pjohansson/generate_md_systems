@@ -115,4 +115,3 @@ def _write_gromos87_to_filepointer(fp, conf):
 
     dx, dy, dz = conf.box_size
     fp.write("{:10.5f}{:10.5f}{:10.5f}\n".format(dx, dy, dz))
-

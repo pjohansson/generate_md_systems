@@ -24,61 +24,61 @@ def write_topol(fp, conf, name, residue_length):
 def main():
     parser = ArgumentParser(
         description="""
-            Generate single-phase couette flow fluid systems with 
+            Generate single-phase couette flow fluid systems with
             substrates on top and bottom.
             """
     )
 
-    parser.add_argument('x', 
+    parser.add_argument('x',
         type=float,
         help="size of liquid phase along x")
-    parser.add_argument('y', 
+    parser.add_argument('y',
         type=float,
         help="size of liquid phase along y")
-    parser.add_argument('z', 
+    parser.add_argument('z',
         type=float,
         help="size of liquid phase along z")
 
     parser_phase = parser.add_argument_group('liquid phase options')
-    parser_phase.add_argument('--phase-path', 
+    parser_phase.add_argument('--phase-path',
             default=None, type=str, metavar='PATH',
             help="optionally set explicit path to phase configuration")
-    parser_phase.add_argument('--phase-default', 
+    parser_phase.add_argument('--phase-default',
             default='LJ1.gro', type=str, metavar='FILE',
             help="library configuration to use (default: %(default)s)")
-    parser_phase.add_argument('--phase-residue-length', 
+    parser_phase.add_argument('--phase-residue-length',
             type=int, default=2,
             help="number of atoms per liquid molecule (default: %(default)s)")
-    parser_phase.add_argument('--phase-topolname', 
+    parser_phase.add_argument('--phase-topolname',
             type=str, default='lj-chain-2',
             help="number of atoms per liquid molecule (default: %(default)s)")
 
     parser_fcc = parser.add_argument_group('substrate options')
-    parser_fcc.add_argument('--fcc-spacing', 
-        type=float, default=1., metavar='DX', 
+    parser_fcc.add_argument('--fcc-spacing',
+        type=float, default=1., metavar='DX',
         help="spacing factor of substrate FCC lattice (default: %(default)s)")
-    parser_fcc.add_argument('--fcc-nz', 
-        type=int, default=5, metavar='N', 
+    parser_fcc.add_argument('--fcc-nz',
+        type=int, default=5, metavar='N',
         help="number of layers for the FCC substrate (default: %(default)s)")
-    parser_fcc.add_argument('--fcc-margin', 
-        type=float, default=4., metavar='DZ', 
+    parser_fcc.add_argument('--fcc-margin',
+        type=float, default=4., metavar='DZ',
         help="margin between substrate and liquid phases")
 
     parser_output = parser.add_argument_group('output options')
-    parser_output.add_argument('-o', '--output', 
+    parser_output.add_argument('-o', '--output',
         type=str, default='conf_final.gro', metavar='PATH',
         help="output path for final system configuration (default: %(default)s)")
-    parser_output.add_argument('-t', '--topology', 
-        type=str, metavar='PATH', default=None, 
+    parser_output.add_argument('-t', '--topology',
+        type=str, metavar='PATH', default=None,
         help="optionally write topology `[ molecules ]` directive to this path")
-    parser_output.add_argument('--title', 
-        type=str, default=None, 
+    parser_output.add_argument('--title',
+        type=str, default=None,
         help="set title for output configuration")
 
     args = parser.parse_args()
 
     nx, ny = calc_fcc_num_sites(args.x, args.y, args.fcc_spacing)
-    spacing_y = (np.sqrt(3.) / 2.) * args.fcc_spacing 
+    spacing_y = (np.sqrt(3.) / 2.) * args.fcc_spacing
 
     fcc_box_x = nx * args.fcc_spacing
     fcc_box_y = ny * spacing_y
@@ -86,10 +86,10 @@ def main():
 
     zshifts = calc_z_shifts(args.z, fcc_box_z, args.fcc_margin)
 
-    # Process all files in a temporary directory which will be 
+    # Process all files in a temporary directory which will be
     # automatically cleaned up afterwards. This is nice.
     #
-    # Note: Consider letting the user specify a directory, which 
+    # Note: Consider letting the user specify a directory, which
     # should keep the in-between files.
     with TemporaryDirectory() as tmpdir:
         path_substrate = os.path.join(tmpdir, 'sub_notrans.gro')
@@ -107,7 +107,7 @@ def main():
         # in the designated section.
         #
         # Translations are done using `gmx editconf`, which has to be
-        # available. 
+        # available.
         mksubstrate_args = [
             'make_LJ_substrate.py',
             str(nx), str(ny), str(args.fcc_nz),
@@ -117,24 +117,24 @@ def main():
         ]
 
         editconf_sub_bottom_args = get_editconf_translate_args(
-            path_substrate, 
-            path_substrate_bottom, 
+            path_substrate,
+            path_substrate_bottom,
             zshifts['sub_bottom'])
 
         editconf_sub_top_args = get_editconf_translate_args(
-            path_substrate, 
-            path_substrate_top, 
+            path_substrate,
+            path_substrate_top,
             zshifts['sub_top'])
 
         editconf_phase_args = get_editconf_translate_args(
-            path_phases, 
-            path_phases_trans, 
+            path_phases,
+            path_phases_trans,
             zshifts['phase'])
 
-        combine_args = [ 
+        combine_args = [
             'cat_gro_files.py',
-            path_substrate_bottom, 
-            path_substrate_top, 
+            path_substrate_bottom,
+            path_substrate_top,
             path_phases_trans,
             '--output', args.output,
             '--box_size', '-1', '-1', str(zshifts['box_z']),
@@ -163,8 +163,8 @@ def main():
             if args.topology:
                 combine_topol_args = [
                     'cat',
-                    path_topol_substrate, 
-                    path_topol_substrate, 
+                    path_topol_substrate,
+                    path_topol_substrate,
                 ]
 
                 with open(args.topology, 'w') as fp:

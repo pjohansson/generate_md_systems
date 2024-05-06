@@ -77,7 +77,7 @@ def add_confs(*configurations: Gromos87) -> Gromos87:
         box_size=box_size,
     )
 
-    
+
 
 def main():
     parser = ArgumentParser()
@@ -126,9 +126,9 @@ def main():
     conf_target_cut = cut_conf(conf_target, origin_cut, end_cut)
 
     conf_insert_fill = create_gromos87_conf_with_size(
-        conf_insert, 
-        *extent, 
-        residue_length=1, 
+        conf_insert,
+        *extent,
+        residue_length=1,
         translate=origin,
     )
 
