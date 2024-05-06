@@ -1,8 +1,0 @@
-# Runtime dependencies
-numpy >= 1.20 # Minimum tested version, likely compatible with some older ones
-toml >= 0.10
-
-# Build / install dependencies
-pytest >= 6.2
-setuptools >= 42
-wheel
