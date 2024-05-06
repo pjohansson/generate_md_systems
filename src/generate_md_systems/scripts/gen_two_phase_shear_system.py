@@ -71,7 +71,7 @@ def get_output_title(title,
         return default_title + ', generated at {}'.format(now)
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="""
             Generate two-phase fluid systems with surfactants at 

@@ -106,7 +106,7 @@ def print_topol(fp, points, topolname):
     return 
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser()
 
     parser.add_argument(

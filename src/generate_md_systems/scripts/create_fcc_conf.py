@@ -237,7 +237,7 @@ def map_atom_data_to_lattice_points(
     return atoms
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="Generate a FCC lattice from a specification file.",
     )

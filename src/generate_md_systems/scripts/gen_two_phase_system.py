@@ -401,7 +401,7 @@ def check_phase_size_axis_alignment(box_size, box_size_2, axis):
         return check_along_axes(0, 1)
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
             description='Create a two-phase fluid system with surfactants.')
 

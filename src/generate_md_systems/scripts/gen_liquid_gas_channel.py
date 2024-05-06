@@ -159,7 +159,7 @@ def parse_float_range(value: str, lower: float = 0., upper: float = 1.) -> float
     return result
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="""
             Generate a liquid/gas channel system for Poiseuille flow simulations.

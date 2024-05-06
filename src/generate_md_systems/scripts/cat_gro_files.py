@@ -52,7 +52,7 @@ def get_title(confs, use_title):
     return title
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="Concatenate Gromos87 configuration (.gro) files."
     )

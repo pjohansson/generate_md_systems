@@ -12,7 +12,7 @@ from sys import exit, stderr, stdout
 from tempfile import TemporaryDirectory
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="""
             Create a system with a fixed size from an input .gro file.

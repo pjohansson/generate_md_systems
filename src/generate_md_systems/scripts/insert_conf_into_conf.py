@@ -79,7 +79,7 @@ def add_confs(*configurations: Gromos87) -> Gromos87:
 
     
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser()
 
     parser.add_argument(

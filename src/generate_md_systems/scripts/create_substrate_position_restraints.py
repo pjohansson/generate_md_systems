@@ -3,7 +3,7 @@
 from argparse import ArgumentParser 
 from gmxutils import *
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser() 
 
     parser.add_argument('file', 

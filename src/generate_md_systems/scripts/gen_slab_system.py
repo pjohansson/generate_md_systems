@@ -132,7 +132,7 @@ def read_conf(path: str | None,
     return conf
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="""
             Generate a slab system for Poiseuille flow simulations.

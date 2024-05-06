@@ -21,7 +21,7 @@ def write_topol(fp, conf, name, residue_length):
     return
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser(
         description="""
             Generate single-phase couette flow fluid systems with 

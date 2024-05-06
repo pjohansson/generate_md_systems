@@ -1,6 +1,41 @@
 [build-system]
 requires = [
-    "setuptools>=42",
+    "setuptools>=60",
     "wheel"
 ]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "generate_md_systems"
+version = "0.0.3"
+authors = [
+    { name = "Petter Johansson", email = "pjohansson@univ-pau.fr" }  
+]
+description = "Create very simple MD simulation systems"
+license = { file = "LICENSE.md" }
+requires-python = ">= 3.10"
+dependencies = [
+    "numpy >= 1.20",
+    "toml >= 0.10",
+
+    # Build / install dependencies
+    "pytest >= 6.2",
+    "setuptools >= 42",
+    "wheel",
+]
+
+[project.scripts]
+cat_gro_files                 = "generate_md_systems.scripts.cat_gro_files:main"
+create_fcc_conf               = "generate_md_systems.scripts.create_fcc_conf:main"
+create_gro_conf               = "generate_md_systems.scripts.create_gro_conf:main"
+gen_single_phase_shear_system = "generate_md_systems.scripts.gen_single_phase_shear_system:main"
+gen_slab_system               = "generate_md_systems.scripts.gen_slab_system:main"
+gen_liquid_gas_channel        = "generate_md_systems.scripts.gen_liquid_gas_channel:main"
+gen_two_phase_system          = "generate_md_systems.scripts.gen_two_phase_system:main"
+gen_two_phase_shear_system    = "generate_md_systems.scripts.gen_two_phase_shear_system:main"
+insert_conf_into_conf         = "generate_md_systems.scripts.insert_conf_into_conf:main"
+make_LJ_substrate             = "generate_md_systems.scripts.make_LJ_substrate:main"
+stack_gro_files               = "generate_md_systems.scripts.stack_gro_files:main"
+
+[tool.setuptools.package-data]
+generate_md_systems = ["*/include/*.gro"]

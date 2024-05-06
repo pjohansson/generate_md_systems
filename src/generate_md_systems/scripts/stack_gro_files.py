@@ -42,7 +42,7 @@ def get_box_size(
     return Vec3(x=max_x, y=max_y, z=max_z)
 
 
-if __name__ == '__main__':
+def main():
     parser = ArgumentParser()
 
     parser.add_argument(
