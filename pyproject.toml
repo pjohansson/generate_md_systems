@@ -7,7 +7,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "generate_md_systems"
-version = "0.0.3"
+version = "0.0.4"
 authors = [
     { name = "Petter Johansson", email = "pjohansson@univ-pau.fr" }  
 ]
