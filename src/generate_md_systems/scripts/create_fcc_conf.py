@@ -65,6 +65,21 @@ def read_fcc_spec(path: str) -> LatticeSpec:
             dx=(dx, dy, dz),
         )
 
+    def read_atoms(category='atoms'):
+        # NOTE: Must be called *AFTER* `residue_name` is read,
+        # which confirms that the `atoms` item exists in the dict.
+        atoms = fcc_toml['atoms']
+
+        if 'sites' in atoms.keys():
+            return [read_site(v) for v in read_value('atoms', 'sites', list)]
+
+        try:
+            atom_name = read_value('atoms', 'name', str)
+        except Exception:
+            atom_name = residue_name
+
+        return [AtomSpec(name=atom_name, dx=(0., 0., 0.))]
+
     try:
         fcc_toml = toml.load(path)
     except Exception:
@@ -77,16 +92,7 @@ def read_fcc_spec(path: str) -> LatticeSpec:
     spacing = read_value('system', 'spacing', float)
 
     residue_name = read_value('atoms', 'residue', str)
-
-    try:
-        atom_name = read_value('atoms', 'name', str)
-    except:
-        atom_name = residue_name
-
-    atoms = [read_site(v) for v in read_value('atoms', 'sites', list)]
-
-    if atoms == []:
-        atoms = [AtomSpec(name=atom_name, dx=(0., 0., 0.))]
+    atoms = read_atoms()
 
     layers_spec = fcc_toml.get('layers', {})
 
