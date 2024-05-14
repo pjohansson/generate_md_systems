@@ -19,10 +19,12 @@ from generate_md_systems.gmx_conf_utils import (
 
 Spacing = namedtuple('FccSpacing', ['dx', 'dy', 'dz', 'dx_y', 'dx_z', 'dy_z'])
 
+
 @dataclass
 class AtomSpec:
     name: str
     dx: tuple[float, float, float]
+
 
 @dataclass
 class LatticeSpec:
@@ -36,12 +38,14 @@ class LatticeSpec:
     layers: dict[int, str]
     translate: tuple[float, float, float]
 
+
 def read_fcc_spec(path: str) -> LatticeSpec:
     def read_value(category: str, key: str, of_type):
         try:
             return of_type(fcc_toml[category][key])
         except KeyError:
-            raise Exception(f"missing field `{key} = {of_type.__name__}` in [ {category} ]")
+            raise Exception(f"missing field `{key} = {
+                            of_type.__name__}` in [ {category} ]")
 
     def check_vec3(value: Sequence[Any]) -> tuple[float, float, float]:
         x, y, z = value
@@ -56,9 +60,15 @@ def read_fcc_spec(path: str) -> LatticeSpec:
         try:
             dx, dy, dz = check_vec3(site_def['dx'])
         except KeyError:
-            raise Exception(f"missing field `dx = [float, float, float]` in atoms.sites (atom name  = {name})")
+            raise Exception(
+                f"missing field `dx = [float, float, float]` "
+                f"in atoms.sites (atom name  = {name})"
+            )
         except ValueError as exc:
-            raise Exception(f"expected `dx = [float, float, float] in atoms.sites (atom name = {name})")
+            raise Exception(
+                f"expected `dx = [float, float, float] "
+                "in atoms.sites (atom name = {name})"
+            )
 
         return AtomSpec(
             name,
@@ -149,7 +159,7 @@ def get_layer_inds_from_spec(
     if layer_1d.size != nx:
         raise ValueError(
             f"in FCC specification: layer {index_layer} "
-            f"did not have {nx = } sites (had {layer_1d.size})"
+            f"did not have {nx=} sites (had {layer_1d.size})"
         )
 
     layer_2d: np.ndarray = np.tile(layer_1d, (ny, 1)).T
@@ -157,7 +167,12 @@ def get_layer_inds_from_spec(
     return layer_2d
 
 
-def calc_box_size(nx: int, ny: int, nz: int, spacing: Spacing) -> tuple[float, float, float]:
+def calc_box_size(
+    nx: int,
+    ny: int,
+    nz: int,
+    spacing: Spacing,
+) -> tuple[float, float, float]:
     return (
         nx * spacing.dx,
         ny * spacing.dy,
@@ -263,7 +278,8 @@ def main():
     try:
         fcc_spec = read_fcc_spec(args.conf)
     except Exception as exc:
-        print(f"error: could not read FCC specification from `{args.conf}` ({exc})")
+        print(f"error: could not read FCC specification from `{
+              args.conf}` ({exc})")
         exit(1)
 
     spacing = calc_fcc_spacings(fcc_spec.spacing)
