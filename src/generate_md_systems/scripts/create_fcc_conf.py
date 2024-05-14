@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 import numpy as np
-import toml
+import tomllib
 
 from argparse import ArgumentParser
 from collections import namedtuple
@@ -91,9 +91,10 @@ def read_fcc_spec(path: str) -> LatticeSpec:
         return [AtomSpec(name=atom_name, dx=(0., 0., 0.))]
 
     try:
-        fcc_toml = toml.load(path)
-    except Exception:
-        raise Exception("could not read file as .toml, is the path correct?")
+        with open(path, 'rb') as fp:
+            fcc_toml = tomllib.load(fp)
+    except Exception as exc:
+        raise Exception(exc)
 
     title = read_value('system', 'title', str)
     nx = read_value('system', 'nx', int)

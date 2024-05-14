@@ -13,10 +13,9 @@ authors = [
 ]
 description = "Create very simple MD simulation systems"
 license = { file = "LICENSE.md" }
-requires-python = ">= 3.10"
+requires-python = ">= 3.11"
 dependencies = [
     "numpy >= 1.20",
-    "toml >= 0.10",
 
     # Build / install dependencies
     "pytest >= 6.2",
