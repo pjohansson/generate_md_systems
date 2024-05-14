@@ -7,17 +7,29 @@ from typing import Any, Mapping
 from generate_md_systems.gmx_conf_utils import read_gromos87
 
 
+DEFAULT_TOPOL_SPEC = {
+    'SOL': {'length': 3},
+}
+
+
 def create_record(
     residue: str,
     count: int,
     residue_length: int,
     spec: Mapping[str, Any],
+    use_default_spec: bool = True,
 ) -> tuple[str, int]:
     def read_value(field: str, default: Any) -> Any:
         try:
             value = spec[residue][field]
         except Exception as exc:
-            value = default
+            if use_default_spec:
+                try:
+                    value = DEFAULT_TOPOL_SPEC[residue][field]
+                except Exception:
+                    value = default
+            else:
+                value = default
 
         return value
 
@@ -36,11 +48,6 @@ def main():
     )
 
     parser.add_argument(
-        '-s', '--specification',
-        default=None, metavar='PATH',
-        help='path to file with residue specification in .toml format',
-    )
-    parser.add_argument(
         '-l', '--residue-length',
         default=1, type=int, metavar='N',
         help='number of atoms per residue (default: %(default)s)',
@@ -49,6 +56,16 @@ def main():
         '-m', '--prepend-molecule-directive',
         action='store_true',
         help='prepend the counter with the `[ molecules ]` directive',
+    )
+    parser.add_argument(
+        '-s', '--specification',
+        default=None, metavar='PATH',
+        help='path to file with residue specification in .toml format',
+    )
+    parser.add_argument(
+        '-i', '--ignore-default-spec',
+        action='store_false', dest='use_default_spec',
+        help='do not read specifications from the default dictionary',
     )
 
     args = parser.parse_args()
@@ -82,6 +99,7 @@ def main():
             current_num,
             args.residue_length,
             spec,
+            use_default_spec=args.use_default_spec,
         )
 
         counter.append(record)
